@@ -1,32 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/auth_provider.dart';
 import '../providers/transaction_provider.dart';
 // import '../models/transaction_model.dart';
 
-class DashboardScreen extends ConsumerWidget {
-  const DashboardScreen({super.key});
+class TransactionListScreen extends ConsumerWidget {
+  const TransactionListScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final transactionsAsync = ref.watch(transactionsStreamProvider);
+    final transactionStream = ref.watch(transactionsStreamProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              ref.read(authServiceProvider).signOut();
-            },
-          ),
-        ],
-      ),
-      body: transactionsAsync.when(
+      appBar: AppBar(title: const Text('Transactions')),
+      body: transactionStream.when(
         data: (transactions) {
           if (transactions.isEmpty) {
-            return const Center(child: Text('No transactions yet.'));
+            return const Center(child: Text('No transactions yet'));
           }
 
           return ListView.builder(
@@ -34,13 +23,12 @@ class DashboardScreen extends ConsumerWidget {
             itemBuilder: (context, index) {
               final t = transactions[index];
               return ListTile(
-                title: Text('${t.category} - \$${t.amount.toStringAsFixed(2)}'),
-                subtitle: Text('${t.note}\n${t.date.toLocal()}'),
-                isThreeLine: true,
+                title: Text('${t.category} - \$${t.amount}'),
+                subtitle: Text('${t.note} - ${t.date.toLocal()}'),
                 trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () {
-                    ref.read(transactionServiceProvider).deleteTransaction(t.id);
+                  icon: const Icon(Icons.delete),
+                  onPressed: () async {
+                    await ref.read(transactionServiceProvider).deleteTransaction(t.id);
                   },
                 ),
               );
@@ -51,10 +39,10 @@ class DashboardScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Error: $e')),
       ),
       floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
         onPressed: () {
           Navigator.pushNamed(context, '/add-transaction');
         },
+        child: const Icon(Icons.add),
       ),
     );
   }

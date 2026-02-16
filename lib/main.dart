@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:trackify/screens/add_transaction_screen.dart';
 import 'package:trackify/screens/home.dart';
 
 Future<void> main() async {
@@ -24,6 +25,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       
       home: const SplashScreen(),
+      routes: {
+        '/add-transaction':(context) => const AddTransactionScreen(),
+      },
     );
   }
 }
