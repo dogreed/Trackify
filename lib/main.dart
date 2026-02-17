@@ -7,11 +7,7 @@ import 'package:trackify/screens/home.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(
-    const ProviderScope(
-      child: MyApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -21,13 +17,17 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      
       debugShowCheckedModeBanner: false,
-      
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue, // main blue theme
+          brightness: Brightness.light,
+        ),
+        useMaterial3: true,
+      ),
+
       home: const SplashScreen(),
-      routes: {
-        '/add-transaction':(context) => const AddTransactionScreen(),
-      },
+      routes: {'/add-transaction': (context) => const AddTransactionScreen()},
     );
   }
 }

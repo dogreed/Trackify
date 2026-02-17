@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/auth_provider.dart';
+import 'add_transaction_screen.dart';
+
+const String currencySymbol = '\$'; // Change currency here
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -9,15 +12,11 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final transactionsAsync = ref.watch(transactionsStreamProvider);
-    final summary = ref.watch(transactionSummaryProvider);
-
-    final totalIncome = summary['income'] ?? 0.0;
-    final totalExpense = summary['expense'] ?? 0.0;
-    final totalBalance = summary['balance'] ?? 0.0;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Dashboard"),
+        title: const Text('Dashboard'),
+        backgroundColor: Colors.blue[700],
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -27,202 +26,196 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ],
       ),
-
-      body: transactionsAsync.when(
-        data: (transactions) {
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 🔵 Premium Balance Card
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF4A90E2), Color(0xFF357ABD)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.blue.withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "Total Balance",
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        "\$${totalBalance.toStringAsFixed(2)}",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // 🟢 Income & 🔴 Expense Cards
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Column(
-                            children: [
-                              const Icon(
-                                Icons.arrow_downward,
-                                color: Colors.green,
-                              ),
-                              const SizedBox(height: 8),
-                              const Text("Income"),
-                              const SizedBox(height: 4),
-                              Text(
-                                "\$${totalIncome.toStringAsFixed(2)}",
-                                style: const TextStyle(
-                                  color: Colors.green,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 16),
-
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Column(
-                            children: [
-                              const Icon(Icons.arrow_upward, color: Colors.red),
-                              const SizedBox(height: 8),
-                              const Text("Expense"),
-                              const SizedBox(height: 4),
-                              Text(
-                                "\$${totalExpense.toStringAsFixed(2)}",
-                                style: const TextStyle(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    "Recent Transactions",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                // 📋 Transactions
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: transactions.length,
-                  itemBuilder: (context, index) {
-                    final t = transactions[index];
-
-                    return Container(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 6,
-                      ),
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                t.category,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                t.note,
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            "${t.type == 'income' ? '+' : '-'} \$${t.amount.toStringAsFixed(2)}",
-                            style: TextStyle(
-                              color: t.type == 'income'
-                                  ? Colors.green
-                                  : Colors.red,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 80),
-              ],
-            ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.blue[700],
+        child: const Icon(Icons.add),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AddTransactionScreen()),
           );
         },
-
-        loading: () => const Center(child: CircularProgressIndicator()),
-
-        error: (e, _) => Center(child: Text("Error: $e")),
       ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: transactionsAsync.when(
+          data: (transactions) {
+            double totalIncome = transactions
+                .where((t) => t.type == 'income')
+                .fold(0, (sum, t) => sum + t.amount);
+            double totalExpense = transactions
+                .where((t) => t.type == 'expense')
+                .fold(0, (sum, t) => sum + t.amount);
+            double balance = totalIncome - totalExpense;
 
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/add-transaction');
-        },
-        child: const Icon(Icons.add),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Total Balance Card
+                Card(
+                  elevation: 6,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                  color: Colors.blue[600],
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Total Balance',
+                          style: TextStyle(color: Colors.white70, fontSize: 16),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '$currencySymbol${balance.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Income & Expense Cards
+                Row(
+                  children: [
+                    Expanded(
+                      child: Card(
+                        color: const Color.fromARGB(255, 8, 149, 46),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              const Text('Income',
+                                  style: TextStyle(
+                                      color: Colors.white70, fontSize: 14)),
+                              const SizedBox(height: 6),
+                              Text(
+                                '$currencySymbol${totalIncome.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Card(
+                        color: const Color.fromARGB(255, 254, 83, 56),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              const Text('Expense',
+                                  style: TextStyle(
+                                      color: Colors.white70, fontSize: 14)),
+                              const SizedBox(height: 6),
+                              Text(
+                                '$currencySymbol${totalExpense.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Recent Transactions
+                const Text(
+                  'Recent Transactions',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: transactions.isEmpty
+                      ? const Center(child: Text('No transactions yet'))
+                      : ListView.builder(
+                          itemCount: transactions.length,
+                          itemBuilder: (context, index) {
+                            final t = transactions[index];
+                            return Dismissible(
+                              key: Key(t.id),
+                              direction: DismissDirection.endToStart,
+                              onDismissed: (_) async {
+                                await ref
+                                    .read(transactionServiceProvider)
+                                    .deleteTransaction(t.id);
+                              },
+                              background: Container(
+                                color: Colors.red,
+                                alignment: Alignment.centerRight,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 20),
+                                child: const Icon(Icons.delete,
+                                    color: Colors.white),
+                              ),
+                              child: Card(
+                                margin:
+                                    const EdgeInsets.symmetric(vertical: 6),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                child: ListTile(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => AddTransactionScreen(
+                                          transaction: t,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  leading: CircleAvatar(
+                                    backgroundColor: t.type == 'income'
+                                        ? Colors.green
+                                        : Colors.red,
+                                    child: Icon(
+                                      t.type == 'income'
+                                          ? Icons.arrow_downward
+                                          : Icons.arrow_upward,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  title: Text('${t.category}'),
+                                  subtitle: Text(
+                                      '${t.note.isNotEmpty ? t.note + ' - ' : ''}${t.date.toLocal()}'),
+                                  trailing: Text(
+                                    '$currencySymbol${t.amount.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                        color: t.type == 'income'
+                                            ? Colors.green
+                                            : Colors.red,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('Error: $e')),
+        ),
       ),
     );
   }
