@@ -1,20 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/auth_provider.dart';
 import 'add_transaction_screen.dart';
 
-const String currencySymbol = 'NRS ';
+const String currencySymbol = 'NRS '; // Change currency here
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
+  // Category icons map
+  static const Map<String, IconData> categoryIcons = {
+    'Food': Icons.fastfood,
+    'Transport': Icons.directions_car,
+    'Shopping': Icons.shopping_bag,
+    'Bills': Icons.receipt_long,
+    'Other': Icons.category,
+  };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final transactionsAsync = ref.watch(transactionsStreamProvider);
-    final currencyFormat =
-        NumberFormat.currency(symbol: currencySymbol, decimalDigits: 2);
+    final currencyFormat = NumberFormat.currency(symbol: currencySymbol);
     final dateFormat = DateFormat('dd MMM yyyy');
 
     return Scaffold(
@@ -36,252 +45,198 @@ class DashboardScreen extends ConsumerWidget {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => const AddTransactionScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const AddTransactionScreen()),
           );
         },
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16.0),
         child: transactionsAsync.when(
           data: (transactions) {
             double totalIncome = transactions
                 .where((t) => t.type == 'income')
                 .fold(0, (sum, t) => sum + t.amount);
-
             double totalExpense = transactions
                 .where((t) => t.type == 'expense')
                 .fold(0, (sum, t) => sum + t.amount);
-
             double balance = totalIncome - totalExpense;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ===== TOTAL BALANCE CARD =====
-                Card(
-                  elevation: 8,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18)),
-                  color: Colors.blue[700],
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Total Balance',
-                          style: TextStyle(
-                              color: Colors.white70, fontSize: 16),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          currencyFormat.format(balance),
-                          style: const TextStyle(
-                              fontSize: 30,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white),
-                        ),
-                      ],
-                    ),
+                // Total Balance Card
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.blue[700]!, width: 2),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Total Balance',
+                        style: TextStyle(color: Colors.black54, fontSize: 16),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        currencyFormat.format(balance),
+                        style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87),
+                      ),
+                    ],
                   ),
                 ),
+                const SizedBox(height: 16),
 
-                const SizedBox(height: 20),
-
-                // ===== INCOME & EXPENSE =====
+                // Income & Expense Cards
                 Row(
                   children: [
                     Expanded(
-                      child: Card(
-                        elevation: 4,
-                        color: Colors.green,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(18),
-                          child: Column(
-                            children: [
-                              const Text(
-                                'Income',
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(color: Colors.green, width: 2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            const Text('Income',
                                 style: TextStyle(
-                                    color: Colors.white70, fontSize: 14),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                currencyFormat.format(totalIncome),
-                                style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white),
-                              ),
-                            ],
-                          ),
+                                    color: Colors.black54, fontSize: 14)),
+                            const SizedBox(height: 6),
+                            Text(
+                              currencyFormat.format(totalIncome),
+                              style: const TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: Card(
-                        elevation: 4,
-                        color: Colors.red,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(18),
-                          child: Column(
-                            children: [
-                              const Text(
-                                'Expense',
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(color: Colors.red, width: 2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            const Text('Expense',
                                 style: TextStyle(
-                                    color: Colors.white70, fontSize: 14),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                currencyFormat.format(totalExpense),
-                                style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white),
-                              ),
-                            ],
-                          ),
+                                    color: Colors.black54, fontSize: 14)),
+                            const SizedBox(height: 6),
+                            Text(
+                              currencyFormat.format(totalExpense),
+                              style: const TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 24),
 
-                const SizedBox(height: 28),
-
+                // Recent Transactions
                 const Text(
                   'Recent Transactions',
-                  style:
-                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-
                 const SizedBox(height: 12),
-
-                // ===== TRANSACTION LIST =====
                 Expanded(
                   child: transactions.isEmpty
-                      ? const Center(
-                          child: Text('No transactions yet'),
-                        )
+                      ? const Center(child: Text('No transactions yet'))
                       : ListView.builder(
                           itemCount: transactions.length,
                           itemBuilder: (context, index) {
                             final t = transactions[index];
+                            final icon =
+                                categoryIcons[t.category] ?? Icons.category;
 
                             return Dismissible(
                               key: Key(t.id),
-                              direction:
-                                  DismissDirection.endToStart,
-
-                              // CONFIRM DELETE
-                              confirmDismiss: (direction) async {
-                                return await showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text(
-                                        'Delete Transaction'),
-                                    content: const Text(
-                                        'Are you sure you want to delete this transaction?'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(
-                                                context, false),
-                                        child:
-                                            const Text('Cancel'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(
-                                                context, true),
-                                        child: const Text(
-                                          'Delete',
-                                          style: TextStyle(
-                                              color: Colors.red),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-
+                              direction: DismissDirection.endToStart,
                               onDismissed: (_) async {
+                                HapticFeedback.lightImpact();
                                 await ref
-                                    .read(
-                                        transactionServiceProvider)
+                                    .read(transactionServiceProvider)
                                     .deleteTransaction(t.id);
                               },
-
                               background: Container(
                                 color: Colors.red,
-                                alignment:
-                                    Alignment.centerRight,
+                                alignment: Alignment.centerRight,
                                 padding:
-                                    const EdgeInsets.symmetric(
-                                        horizontal: 20),
-                                child: const Icon(
-                                  Icons.delete,
-                                  color: Colors.white,
-                                ),
+                                    const EdgeInsets.symmetric(horizontal: 20),
+                                child: const Icon(Icons.delete,
+                                    color: Colors.white),
                               ),
-
-                              child: Card(
-                                elevation: 3,
+                              child: Container(
                                 margin:
-                                    const EdgeInsets.symmetric(
-                                        vertical: 6),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(
-                                            14)),
+                                    const EdgeInsets.symmetric(vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: t.type == 'income'
+                                          ? Colors.green
+                                          : Colors.red,
+                                      width: 1.5),
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: Colors.black.withOpacity(0.03),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2)),
+                                  ],
+                                ),
                                 child: ListTile(
                                   onTap: () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) =>
-                                            AddTransactionScreen(
-                                                transaction: t),
+                                        builder: (_) => AddTransactionScreen(
+                                          transaction: t,
+                                        ),
                                       ),
                                     );
                                   },
                                   leading: CircleAvatar(
-                                    backgroundColor:
-                                        t.type == 'income'
-                                            ? Colors.green
-                                            : Colors.red,
+                                    backgroundColor: t.type == 'income'
+                                        ? Colors.green
+                                        : Colors.red,
                                     child: Icon(
-                                      t.type == 'income'
-                                          ? Icons.arrow_downward
-                                          : Icons.arrow_upward,
+                                      icon,
                                       color: Colors.white,
                                     ),
                                   ),
-                                  title: Text(
-                                    t.category,
-                                    style: const TextStyle(
-                                        fontWeight:
-                                            FontWeight.w600),
-                                  ),
+                                  title: Text(t.category),
                                   subtitle: Text(
-                                    '${t.note.isNotEmpty ? "${t.note} - " : ""}${dateFormat.format(t.date)}',
-                                  ),
+                                      '${t.note.isNotEmpty ? t.note + ' - ' : ''}${DateFormat('dd MMM yyyy').format(t.date)}'),
                                   trailing: Text(
-                                    currencyFormat
-                                        .format(t.amount),
+                                    currencyFormat.format(t.amount),
                                     style: TextStyle(
-                                      fontWeight:
-                                          FontWeight.bold,
-                                      color: t.type ==
-                                              'income'
-                                          ? Colors.green
-                                          : Colors.red,
-                                    ),
+                                        color: t.type == 'income'
+                                            ? Colors.green
+                                            : Colors.red,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ),
                               ),
@@ -292,10 +247,8 @@ class DashboardScreen extends ConsumerWidget {
               ],
             );
           },
-          loading: () =>
-              const Center(child: CircularProgressIndicator()),
-          error: (e, _) =>
-              Center(child: Text('Error: $e')),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('Error: $e')),
         ),
       ),
     );
