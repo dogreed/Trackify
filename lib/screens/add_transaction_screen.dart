@@ -102,7 +102,7 @@ class _AddTransactionScreenState
 
               // Category
               DropdownButtonFormField<String>(
-                value: _categories.contains(_category) ? _category : null,
+                initialValue: _categories.contains(_category) ? _category : null,
                 decoration: InputDecoration(
                   labelText: 'Category',
                   prefixIcon: const Icon(Icons.category),
@@ -124,8 +124,9 @@ class _AddTransactionScreenState
                   });
                 },
                 validator: (val) {
-                  if (_category == null || _category!.isEmpty)
+                  if (_category == null || _category!.isEmpty) {
                     return 'Select category';
+                  }
                   return null;
                 },
               ),

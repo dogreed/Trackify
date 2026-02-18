@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // <-- add this
 class TransactionModel {
   final String id;
   final String uid;
-  final String type; // income or expense
+  final String type;
   final double amount;
   final String category;
   final String note;
@@ -39,7 +39,7 @@ class TransactionModel {
     amount: (map['amount'] as num).toDouble(),
     category: map['category'],
     note: map['note'],
-    date: (map['date'] as Timestamp).toDate(), // <-- Fix here
+    date: (map['date'] as Timestamp).toDate(), 
   );
 }
 }

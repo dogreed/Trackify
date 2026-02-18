@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/auth_provider.dart';
 import 'add_transaction_screen.dart';
 
-const String currencySymbol = '\$'; // Change currency here
+const String currencySymbol = 'NRS ';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -12,6 +13,9 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final transactionsAsync = ref.watch(transactionsStreamProvider);
+    final currencyFormat =
+        NumberFormat.currency(symbol: currencySymbol, decimalDigits: 2);
+    final dateFormat = DateFormat('dd MMM yyyy');
 
     return Scaffold(
       appBar: AppBar(
@@ -32,44 +36,49 @@ class DashboardScreen extends ConsumerWidget {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const AddTransactionScreen()),
+            MaterialPageRoute(
+              builder: (_) => const AddTransactionScreen(),
+            ),
           );
         },
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: transactionsAsync.when(
           data: (transactions) {
             double totalIncome = transactions
                 .where((t) => t.type == 'income')
                 .fold(0, (sum, t) => sum + t.amount);
+
             double totalExpense = transactions
                 .where((t) => t.type == 'expense')
                 .fold(0, (sum, t) => sum + t.amount);
+
             double balance = totalIncome - totalExpense;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Total Balance Card
+                // ===== TOTAL BALANCE CARD =====
                 Card(
-                  elevation: 6,
+                  elevation: 8,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                  color: Colors.blue[600],
+                      borderRadius: BorderRadius.circular(18)),
+                  color: Colors.blue[700],
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(24),
                     child: Column(
                       children: [
                         const Text(
                           'Total Balance',
-                          style: TextStyle(color: Colors.white70, fontSize: 16),
+                          style: TextStyle(
+                              color: Colors.white70, fontSize: 16),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 10),
                         Text(
-                          '$currencySymbol${balance.toStringAsFixed(2)}',
+                          currencyFormat.format(balance),
                           style: const TextStyle(
-                              fontSize: 28,
+                              fontSize: 30,
                               fontWeight: FontWeight.bold,
                               color: Colors.white),
                         ),
@@ -77,30 +86,34 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
 
-                // Income & Expense Cards
+                const SizedBox(height: 20),
+
+                // ===== INCOME & EXPENSE =====
                 Row(
                   children: [
                     Expanded(
                       child: Card(
-                        color: const Color.fromARGB(255, 8, 149, 46),
+                        elevation: 4,
+                        color: Colors.green,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(14)),
                         child: Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(18),
                           child: Column(
                             children: [
-                              const Text('Income',
-                                  style: TextStyle(
-                                      color: Colors.white70, fontSize: 14)),
+                              const Text(
+                                'Income',
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 14),
+                              ),
                               const SizedBox(height: 6),
                               Text(
-                                '$currencySymbol${totalIncome.toStringAsFixed(2)}',
+                                currencyFormat.format(totalIncome),
                                 style: const TextStyle(
-                                    color: Colors.white,
+                                    fontSize: 18,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 18),
+                                    color: Colors.white),
                               ),
                             ],
                           ),
@@ -110,23 +123,26 @@ class DashboardScreen extends ConsumerWidget {
                     const SizedBox(width: 16),
                     Expanded(
                       child: Card(
-                        color: const Color.fromARGB(255, 254, 83, 56),
+                        elevation: 4,
+                        color: Colors.red,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(14)),
                         child: Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(18),
                           child: Column(
                             children: [
-                              const Text('Expense',
-                                  style: TextStyle(
-                                      color: Colors.white70, fontSize: 14)),
+                              const Text(
+                                'Expense',
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 14),
+                              ),
                               const SizedBox(height: 6),
                               Text(
-                                '$currencySymbol${totalExpense.toStringAsFixed(2)}',
+                                currencyFormat.format(totalExpense),
                                 style: const TextStyle(
-                                    color: Colors.white,
+                                    fontSize: 18,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 18),
+                                    color: Colors.white),
                               ),
                             ],
                           ),
@@ -135,57 +151,110 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
 
-                // Recent Transactions
+                const SizedBox(height: 28),
+
                 const Text(
                   'Recent Transactions',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style:
+                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
+
                 const SizedBox(height: 12),
+
+                // ===== TRANSACTION LIST =====
                 Expanded(
                   child: transactions.isEmpty
-                      ? const Center(child: Text('No transactions yet'))
+                      ? const Center(
+                          child: Text('No transactions yet'),
+                        )
                       : ListView.builder(
                           itemCount: transactions.length,
                           itemBuilder: (context, index) {
                             final t = transactions[index];
+
                             return Dismissible(
                               key: Key(t.id),
-                              direction: DismissDirection.endToStart,
+                              direction:
+                                  DismissDirection.endToStart,
+
+                              // CONFIRM DELETE
+                              confirmDismiss: (direction) async {
+                                return await showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text(
+                                        'Delete Transaction'),
+                                    content: const Text(
+                                        'Are you sure you want to delete this transaction?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(
+                                                context, false),
+                                        child:
+                                            const Text('Cancel'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(
+                                                context, true),
+                                        child: const Text(
+                                          'Delete',
+                                          style: TextStyle(
+                                              color: Colors.red),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+
                               onDismissed: (_) async {
                                 await ref
-                                    .read(transactionServiceProvider)
+                                    .read(
+                                        transactionServiceProvider)
                                     .deleteTransaction(t.id);
                               },
+
                               background: Container(
                                 color: Colors.red,
-                                alignment: Alignment.centerRight,
+                                alignment:
+                                    Alignment.centerRight,
                                 padding:
-                                    const EdgeInsets.symmetric(horizontal: 20),
-                                child: const Icon(Icons.delete,
-                                    color: Colors.white),
+                                    const EdgeInsets.symmetric(
+                                        horizontal: 20),
+                                child: const Icon(
+                                  Icons.delete,
+                                  color: Colors.white,
+                                ),
                               ),
+
                               child: Card(
+                                elevation: 3,
                                 margin:
-                                    const EdgeInsets.symmetric(vertical: 6),
+                                    const EdgeInsets.symmetric(
+                                        vertical: 6),
                                 shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
+                                    borderRadius:
+                                        BorderRadius.circular(
+                                            14)),
                                 child: ListTile(
                                   onTap: () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => AddTransactionScreen(
-                                          transaction: t,
-                                        ),
+                                        builder: (_) =>
+                                            AddTransactionScreen(
+                                                transaction: t),
                                       ),
                                     );
                                   },
                                   leading: CircleAvatar(
-                                    backgroundColor: t.type == 'income'
-                                        ? Colors.green
-                                        : Colors.red,
+                                    backgroundColor:
+                                        t.type == 'income'
+                                            ? Colors.green
+                                            : Colors.red,
                                     child: Icon(
                                       t.type == 'income'
                                           ? Icons.arrow_downward
@@ -193,16 +262,26 @@ class DashboardScreen extends ConsumerWidget {
                                       color: Colors.white,
                                     ),
                                   ),
-                                  title: Text('${t.category}'),
+                                  title: Text(
+                                    t.category,
+                                    style: const TextStyle(
+                                        fontWeight:
+                                            FontWeight.w600),
+                                  ),
                                   subtitle: Text(
-                                      '${t.note.isNotEmpty ? t.note + ' - ' : ''}${t.date.toLocal()}'),
+                                    '${t.note.isNotEmpty ? "${t.note} - " : ""}${dateFormat.format(t.date)}',
+                                  ),
                                   trailing: Text(
-                                    '$currencySymbol${t.amount.toStringAsFixed(2)}',
+                                    currencyFormat
+                                        .format(t.amount),
                                     style: TextStyle(
-                                        color: t.type == 'income'
-                                            ? Colors.green
-                                            : Colors.red,
-                                        fontWeight: FontWeight.bold),
+                                      fontWeight:
+                                          FontWeight.bold,
+                                      color: t.type ==
+                                              'income'
+                                          ? Colors.green
+                                          : Colors.red,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -213,8 +292,10 @@ class DashboardScreen extends ConsumerWidget {
               ],
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Error: $e')),
+          loading: () =>
+              const Center(child: CircularProgressIndicator()),
+          error: (e, _) =>
+              Center(child: Text('Error: $e')),
         ),
       ),
     );
