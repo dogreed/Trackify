@@ -24,7 +24,7 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final transactionsAsync = ref.watch(transactionsStreamProvider);
     final currencyFormat = NumberFormat.currency(symbol: currencySymbol);
-    final dateFormat = DateFormat('dd MMM yyyy');
+    // final dateFormat = DateFormat('dd MMM yyyy');
 
     return Scaffold(
       appBar: AppBar(
