@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/transaction_model.dart';
 import '../providers/transaction_provider.dart';
+import 'dashboard_screen.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
   final TransactionModel? transaction; // nullable for edit mode
@@ -42,7 +43,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
   void initState() {
     super.initState();
 
-    // For edit mode
+    // Load transaction if editing
     if (widget.transaction != null) {
       _type = widget.transaction!.type;
       _amount = widget.transaction!.amount;
@@ -51,16 +52,20 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
       _selectedDate = widget.transaction!.date;
       _isOtherCategory =
           !_categories.map((c) => c['name']).contains(_category);
-      if (_isOtherCategory) _categories.add({'name': _category!, 'icon': Icons.edit});
+      if (_isOtherCategory) {
+        _categories.add({'name': _category!, 'icon': Icons.edit});
+      }
     }
 
-    // Animation controller for border color change
+    // Animation for type (income/expense) border color
     _animationController = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 250));
     _typeColorAnimation = ColorTween(
       begin: Colors.green,
       end: Colors.red,
     ).animate(_animationController);
+
+    if (_type == 'expense') _animationController.forward();
   }
 
   @override
@@ -70,7 +75,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
   }
 
   void _switchType(String type) {
-    HapticFeedback.lightImpact(); // subtle haptic feedback
+    HapticFeedback.lightImpact();
     setState(() {
       _type = type;
       if (_type == 'income') {
@@ -90,6 +95,37 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
     );
     if (date != null) {
       setState(() => _selectedDate = date);
+    }
+  }
+
+  Future<void> _saveTransaction() async {
+    if (!_formKey.currentState!.validate()) return;
+    _formKey.currentState!.save();
+
+    final id = widget.transaction?.id ?? const Uuid().v4();
+    final transaction = TransactionModel(
+      id: id,
+      uid: FirebaseAuth.instance.currentUser!.uid,
+      type: _type,
+      amount: _amount!,
+      category: _category!,
+      note: _note ?? '',
+      date: _selectedDate,
+    );
+
+    if (widget.transaction != null) {
+      await ref.read(transactionServiceProvider).updateTransaction(transaction);
+    } else {
+      await ref.read(transactionServiceProvider).addTransaction(transaction);
+    }
+
+    // Navigate directly to Dashboard and remove AddTransactionScreen from stack
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        (route) => false, // remove all previous screens
+      );
     }
   }
 
@@ -147,7 +183,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
                       ),
                       const SizedBox(height: 20),
 
-                      // Amount field with prefix
+                      // Amount field
                       TextFormField(
                         initialValue: _amount?.toString(),
                         decoration: InputDecoration(
@@ -183,7 +219,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
                             value: c['name'] as String,
                             child: Row(
                               children: [
-                                Icon(c['icon'] , size: 20),
+                                Icon(c['icon'], size: 20),
                                 const SizedBox(width: 8),
                                 Text(c['name']),
                               ],
@@ -219,7 +255,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
                         ),
                       if (_isOtherCategory) const SizedBox(height: 20),
 
-                      // Note field
+                      // Note
                       TextFormField(
                         initialValue: _note,
                         decoration: InputDecoration(
@@ -263,28 +299,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12)),
                           ),
-                          onPressed: () async {
-                            if (_formKey.currentState!.validate()) {
-                              _formKey.currentState!.save();
-
-                              final id = widget.transaction?.id ?? const Uuid().v4();
-                              final transaction = TransactionModel(
-                                id: id,
-                                uid: FirebaseAuth.instance.currentUser!.uid,
-                                type: _type,
-                                amount: _amount!,
-                                category: _category!,
-                                note: _note ?? '',
-                                date: _selectedDate,
-                              );
-
-                              await ref
-                                  .read(transactionServiceProvider)
-                                  .addTransaction(transaction);
-
-                              Navigator.pop(context);
-                            }
-                          },
+                          onPressed: _saveTransaction,
                         ),
                       ),
                     ],

@@ -3,32 +3,33 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/transaction_model.dart';
 
 class TransactionService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final CollectionReference _transactionsRef =
+      FirebaseFirestore.instance.collection('transactions');
 
-  final String uid = FirebaseAuth.instance.currentUser!.uid;
-
-  // Add a transaction
+  // Add a new transaction
   Future<void> addTransaction(TransactionModel transaction) async {
-    await _firestore
-        .collection('transactions')
-        .doc(transaction.id)
-        .set(transaction.toMap());
+    await _transactionsRef.doc(transaction.id).set(transaction.toMap());
   }
 
-  // Stream of all transactions for the current user
+  // Update an existing transaction
+  Future<void> updateTransaction(TransactionModel transaction) async {
+    await _transactionsRef.doc(transaction.id).update(transaction.toMap());
+  }
+
+  // Delete a transaction
+  Future<void> deleteTransaction(String id) async {
+    await _transactionsRef.doc(id).delete();
+  }
+
+  // Stream all transactions for the current user
   Stream<List<TransactionModel>> getTransactions() {
-    return _firestore
-        .collection('transactions')
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    return _transactionsRef
         .where('uid', isEqualTo: uid)
         .orderBy('date', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
-            .map((doc) => TransactionModel.fromMap(doc.data()))
+            .map((doc) => TransactionModel.fromMap(doc.data() as Map<String, dynamic>))
             .toList());
-  }
-
-  // Delete a transaction by ID
-  Future<void> deleteTransaction(String id) async {
-    await _firestore.collection('transactions').doc(id).delete();
   }
 }

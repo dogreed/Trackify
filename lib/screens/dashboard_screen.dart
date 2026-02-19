@@ -4,14 +4,14 @@ import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/auth_provider.dart';
-import 'add_transaction_screen.dart';
+import '../screens/add_transaction_screen.dart';
+import '../screens/analytics_screen.dart';
 
-const String currencySymbol = 'NRS '; // Change currency here
+const String currencySymbol = 'NRS ';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
-  // Category icons map
   static const Map<String, IconData> categoryIcons = {
     'Food': Icons.fastfood,
     'Transport': Icons.directions_car,
@@ -24,12 +24,17 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final transactionsAsync = ref.watch(transactionsStreamProvider);
     final currencyFormat = NumberFormat.currency(symbol: currencySymbol);
-    // final dateFormat = DateFormat('dd MMM yyyy');
+    final userAsync = ref.watch(authStateProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
-        backgroundColor: Colors.blue[700],
+        title: userAsync.when(
+          data: (user) =>
+              Text('Hi, ${user?.displayName ?? user?.email ?? 'User'}'),
+          loading: () => const Text('Dashboard'),
+          error: (_, __) => const Text('Dashboard'),
+        ),
+        backgroundColor: Colors.blue,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -40,7 +45,7 @@ class DashboardScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.blue[700],
+        backgroundColor: Colors.blue,
         child: const Icon(Icons.add),
         onPressed: () {
           Navigator.push(
@@ -56,19 +61,21 @@ class DashboardScreen extends ConsumerWidget {
             double totalIncome = transactions
                 .where((t) => t.type == 'income')
                 .fold(0, (sum, t) => sum + t.amount);
+
             double totalExpense = transactions
                 .where((t) => t.type == 'expense')
                 .fold(0, (sum, t) => sum + t.amount);
+
             double balance = totalIncome - totalExpense;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Total Balance Card
+                // Balance Card
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    border: Border.all(color: Colors.blue[700]!, width: 2),
+                    border: Border.all(color: Colors.blue, width: 2),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -89,9 +96,9 @@ class DashboardScreen extends ConsumerWidget {
                       Text(
                         currencyFormat.format(balance),
                         style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87),
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -104,23 +111,20 @@ class DashboardScreen extends ConsumerWidget {
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
                           border: Border.all(color: Colors.green, width: 2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           children: [
-                            const Text('Income',
-                                style: TextStyle(
-                                    color: Colors.black54, fontSize: 14)),
+                            const Text('Income'),
                             const SizedBox(height: 6),
                             Text(
                               currencyFormat.format(totalIncome),
                               style: const TextStyle(
-                                  color: Colors.green,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18),
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
@@ -130,23 +134,20 @@ class DashboardScreen extends ConsumerWidget {
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
                           border: Border.all(color: Colors.red, width: 2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           children: [
-                            const Text('Expense',
-                                style: TextStyle(
-                                    color: Colors.black54, fontSize: 14)),
+                            const Text('Expense'),
                             const SizedBox(height: 6),
                             Text(
                               currencyFormat.format(totalExpense),
                               style: const TextStyle(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18),
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
@@ -154,14 +155,47 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 16),
+
+                // Analytics Button
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AnalyticsScreen(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.blue, width: 1.5),
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: const [
+                        Text(
+                          'View Analytics & Reports',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        Icon(Icons.analytics, color: Colors.blue),
+                      ],
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 24),
 
-                // Recent Transactions
                 const Text(
                   'Recent Transactions',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
+
+                // Transactions List
                 Expanded(
                   child: transactions.isEmpty
                       ? const Center(child: Text('No transactions yet'))
@@ -169,74 +203,83 @@ class DashboardScreen extends ConsumerWidget {
                           itemCount: transactions.length,
                           itemBuilder: (context, index) {
                             final t = transactions[index];
-                            final icon =
-                                categoryIcons[t.category] ?? Icons.category;
+                            final icon = categoryIcons[t.category] ?? Icons.category;
 
                             return Dismissible(
                               key: Key(t.id),
                               direction: DismissDirection.endToStart,
+
+                              confirmDismiss: (direction) async {
+                                return await showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Delete Transaction'),
+                                    content: const Text(
+                                        'Are you sure you want to delete this transaction?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(context).pop(false),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Navigator.of(context).pop(true),
+                                        child: const Text(
+                                          'Delete',
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+
                               onDismissed: (_) async {
                                 HapticFeedback.lightImpact();
                                 await ref
                                     .read(transactionServiceProvider)
                                     .deleteTransaction(t.id);
                               },
+
                               background: Container(
                                 color: Colors.red,
                                 alignment: Alignment.centerRight,
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 20),
-                                child: const Icon(Icons.delete,
-                                    color: Colors.white),
+                                padding: const EdgeInsets.symmetric(horizontal: 20),
+                                child: const Icon(Icons.delete, color: Colors.white),
                               ),
+
                               child: Container(
-                                margin:
-                                    const EdgeInsets.symmetric(vertical: 6),
+                                margin: const EdgeInsets.symmetric(vertical: 6),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                      color: t.type == 'income'
-                                          ? Colors.green
-                                          : Colors.red,
-                                      width: 1.5),
-                                  boxShadow: [
-                                    BoxShadow(
-                                        color: Colors.black.withOpacity(0.03),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2)),
-                                  ],
+                                    color: t.type == 'income' ? Colors.green : Colors.red,
+                                    width: 1.5,
+                                  ),
                                 ),
                                 child: ListTile(
                                   onTap: () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => AddTransactionScreen(
-                                          transaction: t,
-                                        ),
+                                        builder: (_) => AddTransactionScreen(transaction: t),
                                       ),
                                     );
                                   },
                                   leading: CircleAvatar(
-                                    backgroundColor: t.type == 'income'
-                                        ? Colors.green
-                                        : Colors.red,
-                                    child: Icon(
-                                      icon,
-                                      color: Colors.white,
-                                    ),
+                                    backgroundColor: t.type == 'income' ? Colors.green : Colors.red,
+                                    child: Icon(icon, color: Colors.white),
                                   ),
                                   title: Text(t.category),
                                   subtitle: Text(
-                                      '${t.note.isNotEmpty ? t.note + ' - ' : ''}${DateFormat('dd MMM yyyy').format(t.date)}'),
+                                    '${t.note.isNotEmpty ? '${t.note} - ' : ''}${DateFormat('dd MMM yyyy').format(t.date)}',
+                                  ),
                                   trailing: Text(
                                     currencyFormat.format(t.amount),
                                     style: TextStyle(
-                                        color: t.type == 'income'
-                                            ? Colors.green
-                                            : Colors.red,
-                                        fontWeight: FontWeight.bold),
+                                      color: t.type == 'income' ? Colors.green : Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),
