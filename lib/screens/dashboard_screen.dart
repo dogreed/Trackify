@@ -4,8 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/auth_provider.dart';
-import '../screens/add_transaction_screen.dart';
-import '../screens/analytics_screen.dart';
+import 'add_transaction_screen.dart';
+import 'analytics_screen.dart';
 
 const String currencySymbol = 'NRS ';
 
@@ -29,17 +29,45 @@ class DashboardScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: userAsync.when(
-          data: (user) =>
-              Text('Hi, ${user?.displayName ?? user?.email ?? 'User'}'),
+          data: (user) => Text(user?.displayName ?? user?.email ?? 'Dashboard'),
           loading: () => const Text('Dashboard'),
           error: (_, __) => const Text('Dashboard'),
         ),
         backgroundColor: Colors.blue,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.account_circle),
             onPressed: () {
-              ref.read(authServiceProvider).signOut();
+              showMenu(
+                context: context,
+                position: const RelativeRect.fromLTRB(1000, 80, 10, 0),
+                items: [
+                  const PopupMenuItem(
+                    value: 'theme',
+                    child: Row(
+                      children: [
+                        Icon(Icons.brightness_6, color: Colors.black54),
+                        SizedBox(width: 8),
+                        Text('Theme (coming soon)')
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'logout',
+                    child: Row(
+                      children: [
+                        Icon(Icons.logout, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Logout')
+                      ],
+                    ),
+                  ),
+                ],
+              ).then((value) {
+                if (value == 'logout') {
+                  ref.read(authServiceProvider).signOut();
+                }
+              });
             },
           ),
         ],
@@ -103,6 +131,43 @@ class DashboardScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
+
+                // Analytics Button
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const AnalyticsScreen()),
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 14, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.blue, width: 1.5),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.analytics, color: Colors.blue),
+                        SizedBox(width: 8),
+                        Text(
+                          'View Analytics',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: 16),
 
                 // Income & Expense Cards
@@ -155,47 +220,15 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-
-                // Analytics Button
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AnalyticsScreen(),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.blue, width: 1.5),
-                    ),
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text(
-                          'View Analytics & Reports',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        Icon(Icons.analytics, color: Colors.blue),
-                      ],
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 24),
 
+                // Recent Transactions
                 const Text(
                   'Recent Transactions',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
 
-                // Transactions List
                 Expanded(
                   child: transactions.isEmpty
                       ? const Center(child: Text('No transactions yet'))
@@ -203,26 +236,29 @@ class DashboardScreen extends ConsumerWidget {
                           itemCount: transactions.length,
                           itemBuilder: (context, index) {
                             final t = transactions[index];
-                            final icon = categoryIcons[t.category] ?? Icons.category;
+                            final icon =
+                                categoryIcons[t.category] ?? Icons.category;
 
                             return Dismissible(
                               key: Key(t.id),
                               direction: DismissDirection.endToStart,
-
                               confirmDismiss: (direction) async {
                                 return await showDialog(
                                   context: context,
                                   builder: (context) => AlertDialog(
-                                    title: const Text('Delete Transaction'),
+                                    title:
+                                        const Text('Delete Transaction'),
                                     content: const Text(
                                         'Are you sure you want to delete this transaction?'),
                                     actions: [
                                       TextButton(
-                                        onPressed: () => Navigator.of(context).pop(false),
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(false),
                                         child: const Text('Cancel'),
                                       ),
                                       TextButton(
-                                        onPressed: () => Navigator.of(context).pop(true),
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(true),
                                         child: const Text(
                                           'Delete',
                                           style: TextStyle(color: Colors.red),
@@ -232,28 +268,30 @@ class DashboardScreen extends ConsumerWidget {
                                   ),
                                 );
                               },
-
                               onDismissed: (_) async {
                                 HapticFeedback.lightImpact();
                                 await ref
                                     .read(transactionServiceProvider)
                                     .deleteTransaction(t.id);
                               },
-
                               background: Container(
                                 color: Colors.red,
                                 alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.symmetric(horizontal: 20),
-                                child: const Icon(Icons.delete, color: Colors.white),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20),
+                                child: const Icon(Icons.delete,
+                                    color: Colors.white),
                               ),
-
                               child: Container(
-                                margin: const EdgeInsets.symmetric(vertical: 6),
+                                margin:
+                                    const EdgeInsets.symmetric(vertical: 6),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: t.type == 'income' ? Colors.green : Colors.red,
+                                    color: t.type == 'income'
+                                        ? Colors.green
+                                        : Colors.red,
                                     width: 1.5,
                                   ),
                                 ),
@@ -262,12 +300,16 @@ class DashboardScreen extends ConsumerWidget {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => AddTransactionScreen(transaction: t),
+                                        builder: (_) => AddTransactionScreen(
+                                          transaction: t,
+                                        ),
                                       ),
                                     );
                                   },
                                   leading: CircleAvatar(
-                                    backgroundColor: t.type == 'income' ? Colors.green : Colors.red,
+                                    backgroundColor: t.type == 'income'
+                                        ? Colors.green
+                                        : Colors.red,
                                     child: Icon(icon, color: Colors.white),
                                   ),
                                   title: Text(t.category),
@@ -277,7 +319,9 @@ class DashboardScreen extends ConsumerWidget {
                                   trailing: Text(
                                     currencyFormat.format(t.amount),
                                     style: TextStyle(
-                                      color: t.type == 'income' ? Colors.green : Colors.red,
+                                      color: t.type == 'income'
+                                          ? Colors.green
+                                          : Colors.red,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),

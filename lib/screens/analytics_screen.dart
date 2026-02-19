@@ -84,43 +84,37 @@ class AnalyticsScreen extends ConsumerWidget {
                       height: 250,
                       child: categoryTotals.isEmpty
                           ? const Center(child: Text('No transactions'))
-                          : PieChart(
-                              PieChartData(
-                                sections: categoryTotals.entries
-                                    .where((e) => e.value > 0)
-                                    .map((e) {
-                                  return PieChartSectionData(
-                                    value: e.value.toDouble(),
-                                    color: getCategoryColor(e.key),
-                                    radius: 60,
-                                    title: '', // remove numbers inside
-                                  );
-                                }).toList(),
-                                sectionsSpace: 2,
-                                centerSpaceRadius: 40,
-                              ),
-                            ),
+                          : _CategoryPieChart(categoryTotals: categoryTotals),
                     ),
                     const SizedBox(height: 16),
-                    // Legend below pie chart
+                    // Legend
                     Wrap(
                       spacing: 12,
                       runSpacing: 8,
-                      children: categoryTotals.entries
-                          .where((e) => e.value > 0)
-                          .map((e) => Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 16,
-                                    height: 16,
-                                    color: getCategoryColor(e.key),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text('${e.key} (${e.value.toStringAsFixed(2)})'),
-                                ],
-                              ))
-                          .toList(),
+                      children: (() {
+                        final entries = categoryTotals.entries
+                            .where((e) => e.value > 0)
+                            .toList();
+                        entries.sort((a, b) => b.value.compareTo(a.value));
+                        final total = entries.fold<double>(
+                            0, (sum, e) => sum + e.value);
+                        return entries
+                            .map((e) => Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 16,
+                                      height: 16,
+                                      color: getCategoryColor(e.key),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '${e.key}: ${e.value.toStringAsFixed(2)} NRS  (${(e.value / total * 100).toStringAsFixed(1)}%)',
+                                    ),
+                                  ],
+                                ))
+                            .toList();
+                      })(),
                     ),
                   ],
                 ),
@@ -163,15 +157,15 @@ class AnalyticsScreen extends ConsumerWidget {
                                 return DataRow(cells: [
                                   DataCell(Text(month)),
                                   DataCell(Text(
-                                    income.toStringAsFixed(2),
+                                    '${income.toStringAsFixed(2)} रु',
                                     style: const TextStyle(color: Colors.green),
                                   )),
                                   DataCell(Text(
-                                    expense.toStringAsFixed(2),
+                                    '${expense.toStringAsFixed(2)} रु',
                                     style: const TextStyle(color: Colors.red),
                                   )),
                                   DataCell(Text(
-                                    balance.toStringAsFixed(2),
+                                    '${balance.toStringAsFixed(2)} \$',
                                     style: TextStyle(
                                       color: balance >= 0
                                           ? Colors.green
@@ -255,8 +249,10 @@ class AnalyticsScreen extends ConsumerWidget {
                           value: filter.type,
                           hint: const Text('Type'),
                           items: const [
-                            DropdownMenuItem(value: 'income', child: Text('Income')),
-                            DropdownMenuItem(value: 'expense', child: Text('Expense')),
+                            DropdownMenuItem(
+                                value: 'income', child: Text('Income')),
+                            DropdownMenuItem(
+                                value: 'expense', child: Text('Expense')),
                           ],
                           onChanged: (val) {
                             ref
@@ -273,7 +269,8 @@ class AnalyticsScreen extends ConsumerWidget {
                           value: filter.category,
                           hint: const Text('Category'),
                           items: categoryTotals.keys
-                              .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                              .map((c) =>
+                                  DropdownMenuItem(value: c, child: Text(c)))
                               .toList(),
                           onChanged: (val) {
                             ref
@@ -302,6 +299,70 @@ class AnalyticsScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// --- Interactive Pie Chart Widget ---
+class _CategoryPieChart extends StatefulWidget {
+  final Map<String, double> categoryTotals;
+  const _CategoryPieChart({required this.categoryTotals});
+
+  @override
+  State<_CategoryPieChart> createState() => _CategoryPieChartState();
+}
+
+class _CategoryPieChartState extends State<_CategoryPieChart> {
+  int? touchedIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = widget.categoryTotals.values.fold(0.0, (a, b) => a + b);
+
+    final entries = widget.categoryTotals.entries
+        .where((e) => e.value > 0)
+        .toList();
+    entries.sort((a, b) => b.value.compareTo(a.value));
+
+    return PieChart(
+      PieChartData(
+        sections: entries
+            .asMap()
+            .entries
+            .map((entry) {
+              final index = entry.key;
+              final e = entry.value;
+              return PieChartSectionData(
+                value: e.value,
+                color: AnalyticsScreen().getCategoryColor(e.key),
+                radius: touchedIndex == index ? 70 : 60,
+                title: '${(e.value / total * 100).toStringAsFixed(1)}%',
+                titleStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              );
+            })
+            .toList(),
+        sectionsSpace: 2,
+        centerSpaceRadius: 40,
+        centerSpaceColor: Colors.white,
+        pieTouchData: PieTouchData(
+          touchCallback: (event, response) {
+            setState(() {
+              if (!event.isInterestedForInteractions ||
+                  response == null ||
+                  response.touchedSection == null) {
+                touchedIndex = null;
+                return;
+              }
+              touchedIndex = response.touchedSection!.touchedSectionIndex;
+            });
+          },
+        ),
+      ),
+      swapAnimationDuration: const Duration(milliseconds: 500),
     );
   }
 }
