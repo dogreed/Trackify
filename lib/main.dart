@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trackify/screens/add_transaction_screen.dart';
 import 'package:trackify/screens/home.dart';
+import 'package:trackify/providers/theme_provider.dart'; // add this
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,24 +11,38 @@ Future<void> main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeProvider);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+
+      themeMode: themeMode,
+
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue, // main blue theme
+          seedColor: Colors.blue,
           brightness: Brightness.light,
         ),
         useMaterial3: true,
       ),
 
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+      ),
+
       home: const SplashScreen(),
-      routes: {'/add-transaction': (context) => const AddTransactionScreen()},
+      routes: {
+        '/add-transaction': (context) => const AddTransactionScreen(),
+      },
     );
   }
 }

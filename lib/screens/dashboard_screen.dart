@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 import 'add_transaction_screen.dart';
 import 'analytics_screen.dart';
 
@@ -20,11 +21,67 @@ class DashboardScreen extends ConsumerWidget {
     'Other': Icons.category,
   };
 
+  void _showThemeSelector(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) {
+        final currentTheme = ref.read(themeProvider);
+
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Choose Theme",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+
+              RadioListTile(
+                title: const Text("Light"),
+                value: ThemeMode.light,
+                groupValue: currentTheme,
+                onChanged: (value) {
+                  ref.read(themeProvider.notifier).setTheme(value!);
+                  Navigator.pop(context);
+                },
+              ),
+              RadioListTile(
+                title: const Text("Dark"),
+                value: ThemeMode.dark,
+                groupValue: currentTheme,
+                onChanged: (value) {
+                  ref.read(themeProvider.notifier).setTheme(value!);
+                  Navigator.pop(context);
+                },
+              ),
+              RadioListTile(
+                title: const Text("System"),
+                value: ThemeMode.system,
+                groupValue: currentTheme,
+                onChanged: (value) {
+                  ref.read(themeProvider.notifier).setTheme(value!);
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final transactionsAsync = ref.watch(transactionsStreamProvider);
     final currencyFormat = NumberFormat.currency(symbol: currencySymbol);
     final userAsync = ref.watch(authStateProvider);
+
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -33,7 +90,6 @@ class DashboardScreen extends ConsumerWidget {
           loading: () => const Text('Dashboard'),
           error: (_, __) => const Text('Dashboard'),
         ),
-        backgroundColor: Colors.blue,
         actions: [
           IconButton(
             icon: const Icon(Icons.account_circle),
@@ -41,24 +97,24 @@ class DashboardScreen extends ConsumerWidget {
               showMenu(
                 context: context,
                 position: const RelativeRect.fromLTRB(1000, 80, 10, 0),
-                items: [
-                  const PopupMenuItem(
+                items: const [
+                  PopupMenuItem(
                     value: 'theme',
                     child: Row(
                       children: [
-                        Icon(Icons.brightness_6, color: Colors.black54),
+                        Icon(Icons.brightness_6),
                         SizedBox(width: 8),
-                        Text('Theme (coming soon)')
+                        Text('Theme'),
                       ],
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'logout',
                     child: Row(
                       children: [
                         Icon(Icons.logout, color: Colors.red),
                         SizedBox(width: 8),
-                        Text('Logout')
+                        Text('Logout'),
                       ],
                     ),
                   ),
@@ -67,13 +123,15 @@ class DashboardScreen extends ConsumerWidget {
                 if (value == 'logout') {
                   ref.read(authServiceProvider).signOut();
                 }
+                if (value == 'theme') {
+                  _showThemeSelector(context, ref);
+                }
               });
             },
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.blue,
         child: const Icon(Icons.add),
         onPressed: () {
           Navigator.push(
@@ -83,7 +141,7 @@ class DashboardScreen extends ConsumerWidget {
         },
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: transactionsAsync.when(
           data: (transactions) {
             double totalIncome = transactions
@@ -99,27 +157,17 @@ class DashboardScreen extends ConsumerWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Balance Card
+                // BALANCE CARD
                 Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: Colors.blue, width: 2),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
                   padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: colorScheme.primary, width: 2),
+                  ),
                   child: Column(
                     children: [
-                      const Text(
-                        'Total Balance',
-                        style: TextStyle(color: Colors.black54, fontSize: 16),
-                      ),
+                      const Text('Total Balance'),
                       const SizedBox(height: 8),
                       Text(
                         currencyFormat.format(balance),
@@ -132,35 +180,35 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                 ),
 
-                // Analytics Button
+                const SizedBox(height: 16),
+
+                // ANALYTICS BUTTON
                 GestureDetector(
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => const AnalyticsScreen()),
+                        builder: (_) => const AnalyticsScreen(),
+                      ),
                     );
                   },
                   child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 12),
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 14, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
-                      color: Colors.blue[50],
+                      color: colorScheme.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.blue, width: 1.5),
+                      border: Border.all(color: colorScheme.primary),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.analytics, color: Colors.blue),
-                        SizedBox(width: 8),
+                      children: [
+                        Icon(Icons.analytics, color: colorScheme.primary),
+                        const SizedBox(width: 8),
                         Text(
                           'View Analytics',
                           style: TextStyle(
-                            fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.blue,
+                            color: colorScheme.primary,
                           ),
                         ),
                       ],
@@ -170,63 +218,36 @@ class DashboardScreen extends ConsumerWidget {
 
                 const SizedBox(height: 16),
 
-                // Income & Expense Cards
+                // INCOME & EXPENSE
                 Row(
                   children: [
                     Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.green, width: 2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            const Text('Income'),
-                            const SizedBox(height: 6),
-                            Text(
-                              currencyFormat.format(totalIncome),
-                              style: const TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: _financeCard(
+                        context,
+                        'Income',
+                        totalIncome,
+                        Colors.green,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.red, width: 2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            const Text('Expense'),
-                            const SizedBox(height: 6),
-                            Text(
-                              currencyFormat.format(totalExpense),
-                              style: const TextStyle(
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: _financeCard(
+                        context,
+                        'Expense',
+                        totalExpense,
+                        Colors.red,
                       ),
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 24),
 
-                // Recent Transactions
                 const Text(
                   'Recent Transactions',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
+
                 const SizedBox(height: 12),
 
                 Expanded(
@@ -246,10 +267,10 @@ class DashboardScreen extends ConsumerWidget {
                                 return await showDialog(
                                   context: context,
                                   builder: (context) => AlertDialog(
-                                    title:
-                                        const Text('Delete Transaction'),
+                                    title: const Text('Delete Transaction'),
                                     content: const Text(
-                                        'Are you sure you want to delete this transaction?'),
+                                      'Are you sure you want to delete this transaction?',
+                                    ),
                                     actions: [
                                       TextButton(
                                         onPressed: () =>
@@ -275,20 +296,24 @@ class DashboardScreen extends ConsumerWidget {
                                     .deleteTransaction(t.id);
                               },
                               background: Container(
-                                color: Colors.red,
                                 alignment: Alignment.centerRight,
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 20),
-                                child: const Icon(Icons.delete,
-                                    color: Colors.white),
-                              ),
-                              child: Container(
-                                margin:
-                                    const EdgeInsets.symmetric(vertical: 6),
+                                  horizontal: 20,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: Colors.red,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
+                                ),
+                                child: const Icon(
+                                  Icons.delete,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              child: Card(
+                                margin: const EdgeInsets.symmetric(vertical: 6),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(
                                     color: t.type == 'income'
                                         ? Colors.green
                                         : Colors.red,
@@ -337,6 +362,31 @@ class DashboardScreen extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(child: Text('Error: $e')),
         ),
+      ),
+    );
+  }
+
+  Widget _financeCard(
+    BuildContext context,
+    String title,
+    double amount,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border.all(color: color, width: 2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Text(title),
+          const SizedBox(height: 6),
+          Text(
+            NumberFormat.currency(symbol: currencySymbol).format(amount),
+            style: TextStyle(color: color, fontWeight: FontWeight.bold),
+          ),
+        ],
       ),
     );
   }

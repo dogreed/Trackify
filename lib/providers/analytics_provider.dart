@@ -27,12 +27,17 @@ final filteredTransactionsProvider =
     data: (transactions) {
       return transactions.where((t) {
         if (filter.startDate != null &&
-            t.date.isBefore(filter.startDate!)) return false;
-        if (filter.endDate != null &&
-            t.date.isAfter(filter.endDate!)) return false;
-        if (filter.type != null && t.type != filter.type) return false;
-        if (filter.category != null && t.category != filter.category)
+            t.date.isBefore(filter.startDate!)) {
           return false;
+        }
+        if (filter.endDate != null &&
+            t.date.isAfter(filter.endDate!)) {
+          return false;
+        }
+        if (filter.type != null && t.type != filter.type) return false;
+        if (filter.category != null && t.category != filter.category) {
+          return false;
+        }
         return true;
       }).toList();
     },
