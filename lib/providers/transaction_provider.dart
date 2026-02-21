@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:trackify/providers/auth_provider.dart';
 import '../models/transaction_model.dart';
 import '../services/transaction_service.dart';
 
@@ -8,9 +9,22 @@ final transactionServiceProvider = Provider<TransactionService>((ref) {
 });
 
 // 2️⃣ Create a StreamProvider to listen to all transactions
-final transactionsStreamProvider = StreamProvider<List<TransactionModel>>((ref) {
-  final service = ref.watch(transactionServiceProvider);
-  return service.getTransactions(); // gets stream of user transactions
+final transactionsStreamProvider =
+    StreamProvider.autoDispose<List<TransactionModel>>((ref) {
+  final userAsync = ref.watch(authStateProvider);
+
+  return userAsync.when(
+    data: (user) {
+      if (user == null) {
+        return const Stream.empty();
+      }
+
+      final service = ref.watch(transactionServiceProvider);
+      return service.getTransactions(user.uid);
+    },
+    loading: () => const Stream.empty(),
+    error: (_, __) => const Stream.empty(),
+  );
 });
 
 

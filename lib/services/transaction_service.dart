@@ -1,11 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
 import '../models/transaction_model.dart';
 
 class TransactionService {
   final CollectionReference _transactionsRef =
       FirebaseFirestore.instance.collection('transactions');
 
+ 
   // Add a new transaction
   Future<void> addTransaction(TransactionModel transaction) async {
     await _transactionsRef.doc(transaction.id).set(transaction.toMap());
@@ -22,14 +23,14 @@ class TransactionService {
   }
 
   // Stream all transactions for the current user
-  Stream<List<TransactionModel>> getTransactions() {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    return _transactionsRef
-        .where('uid', isEqualTo: uid)
-        .orderBy('date', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => TransactionModel.fromMap(doc.data() as Map<String, dynamic>))
-            .toList());
-  }
+ Stream<List<TransactionModel>> getTransactions(String uid) {
+  return _transactionsRef
+      .where('uid', isEqualTo: uid)
+      .orderBy('date', descending: true)
+      .snapshots()
+      .map((snapshot) => snapshot.docs
+          .map((doc) => TransactionModel.fromMap(
+              doc.data() as Map<String, dynamic>))
+          .toList());
+}
 }
