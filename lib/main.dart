@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trackify/screens/add_transaction_screen.dart';
 import 'package:trackify/screens/home.dart';
-import 'package:trackify/providers/theme_provider.dart'; // add this
+import 'package:trackify/providers/theme_provider.dart';
+import 'package:trackify/services/notification_service.dart'; // add this
 
+final notificationService = NotificationService();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await notificationService.init();
   runApp(const ProviderScope(child: MyApp()));
 }
 

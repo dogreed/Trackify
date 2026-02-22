@@ -105,9 +105,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
                     primary: Colors.blue,
                     surface: Colors.white,
                     onSurface: Colors.black,
-                  ),
-            dialogBackgroundColor:
-                themeMode == ThemeMode.dark ? Colors.grey[900] : Colors.white,
+                  ), dialogTheme: DialogThemeData(backgroundColor: themeMode == ThemeMode.dark ? Colors.grey[900] : Colors.white),
           ),
           child: child!,
         );
@@ -242,7 +240,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
 
                       // Category dropdown
                       DropdownButtonFormField<String>(
-                        value: _categories.any((c) => c['name'] == _category)
+                        initialValue: _categories.any((c) => c['name'] == _category)
                             ? _category
                             : null,
                         dropdownColor: cardColor,

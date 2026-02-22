@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:trackify/main.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -56,7 +57,8 @@ class AuthService {
   }
 
   Future<void> signOut() async {
-    await GoogleSignIn.instance.signOut();
-    await _auth.signOut();
+      await notificationService.cancelAll();
+  await GoogleSignIn.instance.signOut();
+  await _auth.signOut();
   }
 }

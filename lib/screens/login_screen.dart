@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:trackify/main.dart';
 import '../providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerWidget {
@@ -63,10 +64,7 @@ class LoginScreen extends ConsumerWidget {
                   const Text(
                     "Track your money, easily.",
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.white70),
                   ),
                   const SizedBox(height: 40),
 
@@ -88,9 +86,13 @@ class LoginScreen extends ConsumerWidget {
                         elevation: 4,
                       ),
                       onPressed: () async {
-                        await ref
+                        final userCredential = await ref
                             .read(authServiceProvider)
                             .signInWithGoogle();
+
+                        if (userCredential != null) {
+                          await notificationService.scheduleDailyReminder();
+                        }
                       },
                     ),
                   ),
