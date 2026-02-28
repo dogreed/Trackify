@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "962908480964-vc8vjk9cetakfj4nggusdtmn508nn960.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.trackify",
+            "certificate_hash": "583307cb1d0458b672a17095a99aee815e132210"
+          }
+        },
+        {
           "client_id": "962908480964-0qukdl6aa3nhd67shvfukadbpmg9kjh0.apps.googleusercontent.com",
           "client_type": 3
         }

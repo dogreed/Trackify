@@ -10,7 +10,7 @@ final notificationService = NotificationService();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  await notificationService.init();
+  // await notificationService.init();
   runApp(const ProviderScope(child: MyApp()));
 }
 
